@@ -355,19 +355,6 @@
       </p>
     </header>
 
-    <div class="top-controls">
-      <div class="toolbar" aria-hidden="true">
-        <div class="tab"><span>⊞</span>Table</div>
-        <div class="tab"><span>◍</span>Map</div>
-        <div class="tab active"><span>⌁</span>Line</div>
-        <div class="tab muted">+2</div>
-      </div>
-      <div class="control-buttons">
-        <div class="control-button">✎ Edit countries and regions</div>
-        <div class="control-button">⚙ Settings</div>
-      </div>
-    </div>
-
     <div class="chart-shell">
       <div id="chart"></div>
     </div>
@@ -385,11 +372,6 @@
       <div class="source">
         <strong>Data source:</strong> Global Carbon Budget (2025); Population based on various sources (2024) - <u>Learn more about this data</u><br />
         OurWorldInData.org/co2-and-greenhouse-gas-emissions | CC BY
-      </div>
-      <div class="actions">
-        <div class="action">⇩</div>
-        <div class="action">⇪</div>
-        <div class="action">⤢</div>
       </div>
     </div>
 
@@ -473,8 +455,20 @@
     }
 
     function buildOption(endYear) {
+      const endIndex = yearIndex(endYear);
+      let dataMax = 0;
+      seriesOrder.forEach((name) => {
+        const meta = seriesMap[name];
+        if (!meta) return;
+        for (let i = 0; i <= endIndex; i += 1) {
+          const v = meta.values[i];
+          if (v != null && v > dataMax) dataMax = v;
+        }
+      });
+      const yMax = Math.max(25, Math.ceil(dataMax / 5) * 5 + 5);
+
       return {
-        animation: false,
+        animationDurationUpdate: 200,
         color: seriesOrder.map((name) => seriesMap[name].color),
         grid: {
           left: 40,
@@ -539,8 +533,8 @@
         yAxis: {
           type: "value",
           min: 0,
-          max: 25,
-          interval: 5,
+          max: yMax,
+          interval: yMax / 5,
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: {

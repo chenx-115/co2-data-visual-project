@@ -327,19 +327,6 @@
       <p class="desc">来自化石燃料和工业活动的二氧化碳排放量。其中未包含因土地用途变化而产生的排放量。</p>
     </header>
 
-    <div class="top-controls">
-      <div class="toolbar" aria-hidden="true">
-        <div class="tab"><span>⊞</span>Table 表格/列表</div>
-        <div class="tab"><span>◍</span>Map 地图</div>
-        <div class="tab"><span>⌁</span>Line 线段/线条</div>
-        <div class="tab active"><span>▥</span>Bar 酒吧/酒馆</div>
-      </div>
-      <div class="editor-button">
-        <div>✎ Edit countries and regions</div>
-        <div>编辑国家和地区信息</div>
-      </div>
-    </div>
-
     <div class="chart-shell">
       <div id="chart"></div>
     </div>
@@ -426,7 +413,7 @@
       const barWidth = items.length >= 10 ? 20 : items.length > 7 ? 28 : 40;
 
       return {
-        animation: false,
+        animationDurationUpdate: 200,
         grid: {
           left: 132,
           right: 128,

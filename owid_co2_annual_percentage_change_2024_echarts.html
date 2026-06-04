@@ -417,7 +417,6 @@
       overflow: hidden;
     }
 
-    body.preview-mode header,
     body.preview-mode .header,
     body.preview-mode h1,
     body.preview-mode .cn-title,
@@ -429,7 +428,8 @@
     body.preview-mode .footer,
     body.preview-mode .status,
     body.preview-mode .notes,
-    body.preview-mode .timeline {
+    body.preview-mode .timeline,
+    body.preview-mode .legend-wrap {
       display: none !important;
     }
 
@@ -454,12 +454,6 @@
     </header>
 
     <div class="top-controls">
-      <div class="toolbar" aria-hidden="true">
-        <div class="tab"><span class="tab-icon">⊞</span>Table 表格/列表</div>
-        <div class="tab active"><span class="tab-icon">🌐</span>Map 地图</div>
-        <div class="tab"><span class="tab-icon">📈</span>Line 线段/线条</div>
-        <div class="tab"><span class="tab-icon">▥</span>Bar 酒吧/酒馆</div>
-      </div>
       <div class="view-controls">
         <button id="resetViewButton" class="view-button" type="button">↻ Reset view</button>
         <select id="regionSelect" class="region-select" aria-label="Select region">
@@ -494,7 +488,7 @@
           <span>2%</span>
           <span>5%</span>
           <span>10%</span>
-          <span></span>
+          <span>>10%</span>
         </div>
         <div class="legend-bar">
           <span style="background: var(--blue-5);"></span>
@@ -552,7 +546,7 @@
 
     function buildOption() {
       return {
-        animation: false,
+        animationDurationUpdate: 200,
         tooltip: {
           trigger: "item",
           backgroundColor: "rgba(255,255,255,0.96)",

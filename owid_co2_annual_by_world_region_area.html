@@ -315,7 +315,9 @@
     body.preview-mode .timeline,
     body.preview-mode .footer-line,
     body.preview-mode .source,
-    body.preview-mode .related {
+    body.preview-mode .related,
+    body.preview-mode .legend-strip,
+    body.preview-mode .legend-note {
       display: none !important;
     }
 
@@ -330,7 +332,8 @@
 </head>
 <body>
   <script>
-    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) {
       document.body.classList.add("preview-mode");
     }
   </script>
@@ -344,19 +347,10 @@
       </p>
     </header>
 
-    <div class="top-controls">
-      <div class="toolbar" aria-hidden="true">
-        <div class="tab"><span>□</span>Table</div>
-        <div class="tab active"><span>▣</span>Area</div>
-      </div>
-      <button class="settings-button" type="button">Settings</button>
-    </div>
-
     <div class="chart-shell">
       <div id="chart"></div>
     </div>
 
-    <div id="legendStrip" class="legend-strip"></div>
     <div id="status" class="status"></div>
 
     <div class="timeline">
@@ -366,17 +360,10 @@
       <span id="currentYear" class="year">2024</span>
     </div>
 
-    <div class="legend-note">拖动年份滑块可以查看截至该年的堆叠面积变化；右侧标签会跟随当前年份更新。</div>
-
     <div class="bottom-bar">
       <div class="source">
         <strong>Data source:</strong> Global Carbon Budget (2025) - Learn more about this data<br />
         OurWorldInData.org/co2-and-greenhouse-gas-emissions | CC BY
-      </div>
-      <div class="actions">
-        <div class="action">⇩ Download</div>
-        <div class="action">⇪ Share</div>
-        <div class="action">⤢ Enter full-screen</div>
       </div>
     </div>
   </div>
@@ -389,7 +376,6 @@
     const yearSlider = document.getElementById("yearSlider");
     const currentYearEl = document.getElementById("currentYear");
     const playButton = document.getElementById("playButton");
-    const legendStripEl = document.getElementById("legendStrip");
 
     const chart = echarts.init(chartEl, null, { renderer: "canvas" });
     const asset = window.OWID_WORLD_REGION_AREA || {};
@@ -410,20 +396,6 @@
       if (Math.abs(value) < 0.0001) return "0 t";
       if (value < 1) return `${(value * 1000).toFixed(0)} million t`;
       return `${value.toFixed(2)} billion t`;
-    }
-
-    function buildLegend() {
-      legendStripEl.innerHTML = seriesOrder
-        .map((name) => {
-          const color = seriesMap[name] ? seriesMap[name].color : "#999999";
-          return `
-            <span class="legend-item">
-              <span class="legend-swatch" style="background:${color}"></span>
-              <span>${name}</span>
-            </span>
-          `;
-        })
-        .join("");
     }
 
     function buildSeries(endYear) {
@@ -483,8 +455,7 @@
 
     function buildOption(endYear) {
       return {
-        animation: false,
-        animationDurationUpdate: 0,
+        animationDurationUpdate: 200,
         color: seriesColors,
         grid: {
           left: 92,
@@ -513,7 +484,17 @@
           }
         },
         legend: {
-          show: false
+          show: isPreview ? false : true,
+          top: 8,
+          left: 220,
+          itemWidth: 12,
+          itemHeight: 12,
+          itemGap: 16,
+          textStyle: {
+            color: "#576e88",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 12
+          }
         },
         xAxis: {
           type: "category",
@@ -598,7 +579,6 @@
           throw new Error("Local world-region asset bundle was not loaded.");
         }
 
-        buildLegend();
         updateYear(2024);
         statusEl.textContent = `已加载 ${seriesOrder.length} 条世界区域序列，年份范围 ${years[0]}-${years[years.length - 1]}。`;
       } catch (error) {

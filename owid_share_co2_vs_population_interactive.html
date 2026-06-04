@@ -395,7 +395,8 @@
 </head>
 <body>
   <script>
-    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) {
       document.body.classList.add("preview-mode");
     }
   </script>
@@ -406,14 +407,6 @@
         <h1>Share of global CO₂ emissions vs. share of population, <span id="titleYear">2024</span></h1>
         <p class="desc">This measures <u>fossil fuel and industry emissions</u>. <u>Land-use change emissions</u> are not included.</p>
       </header>
-
-      <div class="top-controls">
-        <div class="toolbar" aria-hidden="true">
-          <div class="tab"><span>⊞</span>Table</div>
-          <div class="tab active"><span>∵</span>Scatter</div>
-        </div>
-        <div class="settings-button">⚙ Settings</div>
-      </div>
 
       <div class="chart-shell">
         <div id="chart"></div>
@@ -546,6 +539,7 @@
       const baseSeries = Object.keys(incomeColors).map((income) => ({
         name: income,
         type: "scatter",
+        color: incomeColors[income],
         data: grouped[income] || [],
         symbolSize(params) {
           const x = params[0];
@@ -591,12 +585,26 @@
         z: 6
       };
 
-      return [...baseSeries, labelSeries];
+      const referenceLine = {
+        name: "Emissions = Population",
+        type: "line",
+        data: [[1e-6, 1e-6], [3e-1, 3e-1]],
+        symbol: "none",
+        silent: true,
+        lineStyle: {
+          color: "#c7a7a2",
+          type: "dashed",
+          width: 1.5
+        },
+        z: 1
+      };
+
+      return [...baseSeries, referenceLine, labelSeries];
     }
 
     function buildOption(year) {
       return {
-        animation: false,
+        animationDurationUpdate: 200,
         grid: {
           left: 58,
           right: 240,
@@ -604,6 +612,7 @@
           bottom: 70
         },
         legend: {
+          show: isPreview ? false : true,
           right: 18,
           top: 52,
           orient: "vertical",

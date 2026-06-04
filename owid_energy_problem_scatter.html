@@ -248,7 +248,8 @@
 </head>
 <body>
   <script>
-    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) {
       document.body.classList.add("preview-mode");
     }
   </script>
@@ -258,17 +259,6 @@
       <h1>Consumption-based CO2 emissions per capita vs. GDP per capita, 2023</h1>
       <p class="subtitle">Consumption-based emissions are measured in tonnes per person. They are territorial emissions minus emissions embedded in exports, plus emissions embedded in imports. GDP per capita is adjusted for inflation and differences in living costs between countries.</p>
     </header>
-
-    <div class="toolbar">
-      <div class="tabs">
-        <div class="tab">Table</div>
-        <div class="tab active">Scatter</div>
-      </div>
-      <div class="buttons">
-        <div class="button">Select countries and regions</div>
-        <div class="button">Settings</div>
-      </div>
-    </div>
 
     <p class="axis-title"><strong>Consumption-based emissions per capita</strong> (tonnes per person)</p>
     <div id="chart"></div>
@@ -339,6 +329,7 @@
       return REGION_ORDER.map((region) => ({
         name: region,
         type: "scatter",
+        color: REGION_COLORS[region],
         data: points
           .filter((point) => point.region === region)
           .map((point) => ({
@@ -374,7 +365,7 @@
       titleEl.textContent = `Consumption-based CO2 emissions per capita vs. GDP per capita, ${year}`;
 
       chart.setOption({
-        animation: false,
+        animationDurationUpdate: 200,
         grid: { left: 42, right: 210, top: 22, bottom: 56 },
         tooltip: {
           trigger: "item",
@@ -397,6 +388,7 @@
           }
         },
         legend: {
+          show: isPreview ? false : true,
           orient: "vertical",
           right: 18,
           top: 20,
