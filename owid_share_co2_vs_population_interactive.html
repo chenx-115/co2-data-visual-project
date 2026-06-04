@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Share of global CO₂ emissions vs. share of population, 2024</title>
+  <style>
+    :root {
+      --ink: #304e73;
+      --muted: #566f8d;
+      --line: #ded8cf;
+      --tab-bg: #ffffff;
+      --tab-active: #dbe8f7;
+      --tab-active-border: #bfd1e7;
+      --owid-navy: #0b2b4c;
+      --owid-red: #d74c3c;
+      --button-bg: #ffffff;
+      --button-line: #ddd7cc;
+      --sidebar-line: #ebe5db;
+      --panel-bg: #f7f4ee;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .page {
+      max-width: 1420px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 0;
+      border: 1px solid #ece7df;
+      background: #fff;
+    }
+
+    .main {
+      padding: 26px 24px 14px;
+    }
+
+    .sidebar {
+      border-left: 1px solid var(--sidebar-line);
+      padding: 26px 18px 16px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .header {
+      position: relative;
+      padding-right: 120px;
+    }
+
+    .owid-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 98px;
+      background: var(--owid-navy);
+      color: #fff;
+      border-bottom: 4px solid var(--owid-red);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.05;
+      padding: 10px 10px 12px;
+      box-shadow: 0 4px 14px rgba(11, 43, 76, 0.14);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(34px, 4vw, 54px);
+      line-height: 1.05;
+      color: #243f63;
+    }
+
+    .desc {
+      margin: 0;
+      max-width: 980px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: clamp(18px, 1.45vw, 24px);
+      line-height: 1.28;
+      color: #4d6888;
+    }
+
+    .desc u {
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 22px 0 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #e3ddd4;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--tab-bg);
+      box-shadow: 0 1px 2px rgba(60, 79, 105, 0.06);
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-right: 1px solid #e3ddd4;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 18px;
+      color: #5b728e;
+      background: #fff;
+      user-select: none;
+    }
+
+    .tab:last-child {
+      border-right: none;
+    }
+
+    .tab.active {
+      background: var(--tab-active);
+      color: #43678f;
+      box-shadow: inset 0 0 0 1px var(--tab-active-border);
+    }
+
+    .settings-button {
+      height: 48px;
+      padding: 0 18px;
+      border: 1px solid var(--button-line);
+      border-radius: 8px;
+      background: var(--button-bg);
+      color: #526987;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 17px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: default;
+      box-shadow: 0 1px 2px rgba(60, 79, 105, 0.06);
+    }
+
+    .chart-shell {
+      position: relative;
+    }
+
+    #chart {
+      width: 100%;
+      height: 760px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: auto auto minmax(240px, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      margin: 12px 0 18px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #556d89;
+    }
+
+    .timeline button {
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 6px;
+      background: #ece9e3;
+      color: #607490;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .timeline input[type="range"] {
+      width: 100%;
+      accent-color: #a8aeb7;
+      cursor: pointer;
+    }
+
+    .timeline .year {
+      min-width: 56px;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .timeline .current {
+      text-align: right;
+      font-size: 16px;
+      color: #415f83;
+    }
+
+    .status {
+      min-height: 22px;
+      margin: 0 0 8px;
+      color: #7a664d;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+
+    .footer {
+      padding-top: 8px;
+      border-top: 1px solid #efeae2;
+      color: #4f6785;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .footer strong {
+      color: #2f496a;
+    }
+
+    .sidebar-title {
+      margin: 0 0 18px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #627996;
+    }
+
+    .search-box {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border: 1px solid #e3ddd4;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #455f80;
+      outline: none;
+    }
+
+    .sidebar-controls {
+      display: flex;
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+
+    .sidebar-button {
+      flex: 1;
+      height: 46px;
+      border: 1px solid #e3ddd4;
+      border-radius: 8px;
+      background: #fff;
+      color: #556d89;
+      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .sidebar-subtitle {
+      margin: 0 0 12px;
+      color: #7d7d7d;
+      font-size: 16px;
+      font-style: italic;
+    }
+
+    .country-list {
+      max-height: 820px;
+      overflow: auto;
+      border-top: 1px solid #f0ece5;
+      padding-top: 6px;
+    }
+
+    .country-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 6px;
+      border-bottom: 1px solid #f5f1eb;
+      color: #566f8d;
+      font-size: 15px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .country-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: #6d8bb2;
+    }
+
+    .country-name {
+      flex: 1;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1120px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-left: none;
+        border-top: 1px solid var(--sidebar-line);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .main,
+      .sidebar {
+        padding-inline: 12px;
+      }
+
+      .header {
+        padding-right: 0;
+      }
+
+      .owid-badge {
+        position: static;
+        display: inline-block;
+        margin-bottom: 12px;
+      }
+
+      .top-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .timeline {
+        grid-template-columns: auto 1fr auto;
+      }
+
+      .timeline .year.start {
+        display: none;
+      }
+
+      #chart {
+        height: 560px;
+      }
+    }
+    .owid-badge,
+    .top-controls,
+    .desc,
+    .footer,
+    .status {
+      display: none !important;
+    }
+
+    body.preview-mode {
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    body.preview-mode .page {
+      width: 100%;
+      max-width: none;
+      height: 100vh;
+      margin: 0;
+      display: block;
+      border: 0;
+      overflow: hidden;
+    }
+
+    body.preview-mode .main {
+      height: 100vh;
+      padding: 6px;
+    }
+
+    body.preview-mode .header,
+    body.preview-mode .top-controls,
+    body.preview-mode .status,
+    body.preview-mode .timeline,
+    body.preview-mode .footer,
+    body.preview-mode .sidebar {
+      display: none !important;
+    }
+
+    body.preview-mode .chart-shell {
+      height: 100%;
+    }
+
+    body.preview-mode #chart {
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) {
+      document.body.classList.add("preview-mode");
+    }
+  </script>
+  <div class="page">
+    <main class="main">
+      <header class="header">
+        <div class="owid-badge">Our World<br />in Data</div>
+        <h1>Share of global CO₂ emissions vs. share of population, <span id="titleYear">2024</span></h1>
+        <p class="desc">This measures <u>fossil fuel and industry emissions</u>. <u>Land-use change emissions</u> are not included.</p>
+      </header>
+
+      <div class="chart-shell">
+        <div id="chart"></div>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="timeline">
+        <button id="playButton" type="button" aria-label="Play timeline">▶</button>
+        <span class="year start">1750</span>
+        <input id="yearSlider" type="range" min="1750" max="2024" step="1" value="2024" />
+        <span id="currentYear" class="year current">2024</span>
+      </div>
+
+      <div class="footer">
+        <strong>Data source:</strong> Global Carbon Budget (2025); World Bank (2025); HYDE (2023); Gapminder (2022); UN WPP (2024) - <u>Learn more about this data</u><br />
+        OurWorldInData.org/co2-and-greenhouse-gas-emissions | CC BY
+      </div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="sidebar-title">SELECT COUNTRIES AND REGIONS</div>
+      <input id="searchInput" class="search-box" type="text" placeholder="Search for a country or region" />
+
+      <div class="sidebar-controls">
+        <button id="selectDefaultsButton" class="sidebar-button" type="button">↺ Defaults</button>
+        <button id="clearButton" class="sidebar-button" type="button">✕ Clear</button>
+      </div>
+
+      <div class="sidebar-subtitle">All countries and regions</div>
+      <div id="countryList" class="country-list"></div>
+    </aside>
+  </div>
+
+  <script src="./echarts.min.js"></script>
+  <script src="./owid_share_co2_vs_population_assets.js"></script>
+  <script>
+    const asset = window.OWID_SHARE_CO2_VS_POPULATION || {};
+    const years = asset.years || [];
+    const entities = asset.entities || [];
+    const pointsByYear = asset.pointsByYear || {};
+    const incomeColors = asset.incomeColors || {};
+    const defaultSelected = new Set(asset.defaultSelected || []);
+
+    const chartEl = document.getElementById("chart");
+    const statusEl = document.getElementById("status");
+    const yearSlider = document.getElementById("yearSlider");
+    const currentYearEl = document.getElementById("currentYear");
+    const titleYearEl = document.getElementById("titleYear");
+    const playButton = document.getElementById("playButton");
+    const searchInput = document.getElementById("searchInput");
+    const countryListEl = document.getElementById("countryList");
+    const selectDefaultsButton = document.getElementById("selectDefaultsButton");
+    const clearButton = document.getElementById("clearButton");
+
+    const chart = echarts.init(chartEl, null, { renderer: "canvas" });
+
+    let currentYear = 2024;
+    let playTimer = null;
+    let selectedEntities = new Set(defaultSelected);
+    let searchText = "";
+
+    function yearData(year) {
+      return pointsByYear[String(year)] || pointsByYear[year] || [];
+    }
+
+    function formatPercentFromFraction(value) {
+      const percent = value * 100;
+      if (percent >= 1) return `${percent.toFixed(0)}%`;
+      if (percent >= 0.1) return `${percent.toFixed(1)}%`;
+      if (percent >= 0.01) return `${percent.toFixed(2)}%`;
+      if (percent >= 0.001) return `${percent.toFixed(3)}%`;
+      return `${percent.toFixed(4)}%`;
+    }
+
+    function buildCountryList() {
+      const filtered = entities.filter((name) => name.toLowerCase().includes(searchText));
+      countryListEl.innerHTML = filtered
+        .map((name) => {
+          const checked = selectedEntities.has(name) ? "checked" : "";
+          return `
+            <label class="country-item">
+              <input type="checkbox" data-entity="${name}" ${checked} />
+              <span class="country-name">${name}</span>
+            </label>
+          `;
+        })
+        .join("");
+
+      countryListEl.querySelectorAll("input[type='checkbox']").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          const entity = event.target.getAttribute("data-entity");
+          if (event.target.checked) {
+            selectedEntities.add(entity);
+          } else {
+            selectedEntities.delete(entity);
+          }
+          updateChart();
+        });
+      });
+    }
+
+    function buildSeries(year) {
+      const items = yearData(year);
+      const grouped = {};
+      Object.keys(incomeColors).forEach((income) => {
+        grouped[income] = [];
+      });
+
+      const selectedPoints = [];
+      items.forEach((item) => {
+        const point = {
+          name: item.entity,
+          value: [item.x, item.y],
+          entity: item.entity,
+          income: item.income,
+          itemStyle: {
+            color: incomeColors[item.income] || incomeColors.Unclassified || "#9aa8b9",
+            opacity: selectedEntities.size === 0 || selectedEntities.has(item.entity) ? 0.92 : 0.68
+          }
+        };
+        if (!grouped[item.income]) grouped[item.income] = [];
+        grouped[item.income].push(point);
+
+        if (selectedEntities.has(item.entity)) {
+          selectedPoints.push(item);
+        }
+      });
+
+      const baseSeries = Object.keys(incomeColors).map((income) => ({
+        name: income,
+        type: "scatter",
+        color: incomeColors[income],
+        data: grouped[income] || [],
+        symbolSize(params) {
+          const x = params[0];
+          const y = params[1];
+          const score = Math.max(0, Math.log10(x) + 6) + Math.max(0, Math.log10(y) + 6);
+          return Math.max(7, Math.min(18, 7 + score * 0.9));
+        },
+        emphasis: {
+          focus: "series"
+        },
+        itemStyle: {
+          borderColor: "#ffffff",
+          borderWidth: 1
+        }
+      }));
+
+      const labelSeries = {
+        name: "Selected labels",
+        type: "scatter",
+        data: selectedPoints.map((item) => ({
+          name: item.entity,
+          value: [item.x, item.y],
+          itemStyle: {
+            color: incomeColors[item.income] || incomeColors.Unclassified || "#9aa8b9",
+            borderColor: "#ffffff",
+            borderWidth: 1.2
+          },
+          label: {
+            show: true,
+            position: "right",
+            formatter: item.entity,
+            color: incomeColors[item.income] || "#304e73",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 12
+          }
+        })),
+        symbolSize(params) {
+          const x = params[0];
+          const y = params[1];
+          const score = Math.max(0, Math.log10(x) + 6) + Math.max(0, Math.log10(y) + 6);
+          return Math.max(8, Math.min(19, 8 + score * 0.9));
+        },
+        z: 6
+      };
+
+      const referenceLine = {
+        name: "Emissions = Population",
+        type: "line",
+        data: [[1e-6, 1e-6], [3e-1, 3e-1]],
+        symbol: "none",
+        silent: true,
+        lineStyle: {
+          color: "#c7a7a2",
+          type: "dashed",
+          width: 1.5
+        },
+        z: 1
+      };
+
+      return [...baseSeries, referenceLine, labelSeries];
+    }
+
+    function buildOption(year) {
+      return {
+        animationDurationUpdate: 200,
+        grid: {
+          left: 58,
+          right: 240,
+          top: 50,
+          bottom: 70
+        },
+        legend: {
+          show: isPreview ? false : true,
+          right: 18,
+          top: 52,
+          orient: "vertical",
+          itemWidth: 12,
+          itemHeight: 12,
+          textStyle: {
+            color: "#304e73",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 12
+          }
+        },
+        tooltip: {
+          trigger: "item",
+          backgroundColor: "rgba(255,255,255,0.98)",
+          borderColor: "#d7d1c6",
+          borderWidth: 1,
+          textStyle: {
+            color: "#38506e",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 13
+          },
+          formatter(params) {
+            const entity = params.data.entity || params.name;
+            const income = params.data.income || params.seriesName;
+            return [
+              `<strong>${entity}</strong>`,
+              `Year: ${year}`,
+              `Share of world population: <strong>${formatPercentFromFraction(params.value[0])}</strong>`,
+              `Share of global emissions: <strong>${formatPercentFromFraction(params.value[1])}</strong>`,
+              `Income group: ${income}`
+            ].join("<br/>");
+          }
+        },
+        xAxis: {
+          type: "log",
+          min: 1e-6,
+          max: 3e-1,
+          name: "Share of world population (plotted on a logarithmic axis)",
+          nameLocation: "middle",
+          nameGap: 40,
+          nameTextStyle: {
+            color: "#425a7c",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 14
+          },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: {
+            color: "#425a7c",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 12,
+            formatter(value) {
+              return formatPercentFromFraction(value);
+            }
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#d9d9d9",
+              type: "dashed"
+            }
+          }
+        },
+        yAxis: {
+          type: "log",
+          min: 1e-6,
+          max: 3e-1,
+          name: "Share of global emissions (plotted on a logarithmic axis)",
+          nameLocation: "end",
+          nameGap: 20,
+          nameRotate: 0,
+          nameTextStyle: {
+            color: "#425a7c",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 14,
+            align: "left"
+          },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: {
+            color: "#425a7c",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 12,
+            formatter(value) {
+              return formatPercentFromFraction(value);
+            }
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#d9d9d9",
+              type: "dashed"
+            }
+          }
+        },
+        series: buildSeries(year)
+      };
+    }
+
+    function updateChart() {
+      titleYearEl.textContent = String(currentYear);
+      currentYearEl.textContent = String(currentYear);
+      yearSlider.value = String(currentYear);
+      chart.setOption(buildOption(currentYear), true);
+      statusEl.textContent = `当前年份 ${currentYear}，已选中 ${selectedEntities.size} 个国家/地区。`;
+    }
+
+    function stopPlayback() {
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+      playButton.textContent = "▶";
+    }
+
+    function startPlayback() {
+      stopPlayback();
+      playButton.textContent = "❚❚";
+      playTimer = setInterval(() => {
+        currentYear = currentYear >= 2024 ? 1750 : currentYear + 1;
+        updateChart();
+        if (currentYear === 2024) stopPlayback();
+      }, 140);
+    }
+
+    function init() {
+      try {
+        if (!window.echarts) {
+          throw new Error("Local echarts.min.js was not loaded.");
+        }
+        if (!years.length || !entities.length) {
+          throw new Error("Local asset bundle was not loaded.");
+        }
+        buildCountryList();
+        updateChart();
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "图表资源加载失败。请确认本页与 echarts.min.js、owid_share_co2_vs_population_assets.js 在同一目录。";
+      }
+    }
+
+    yearSlider.addEventListener("input", (event) => {
+      stopPlayback();
+      currentYear = Number(event.target.value);
+      updateChart();
+    });
+
+    playButton.addEventListener("click", () => {
+      if (playTimer) {
+        stopPlayback();
+      } else {
+        startPlayback();
+      }
+    });
+
+    searchInput.addEventListener("input", (event) => {
+      searchText = event.target.value.trim().toLowerCase();
+      buildCountryList();
+    });
+
+    selectDefaultsButton.addEventListener("click", () => {
+      selectedEntities = new Set(asset.defaultSelected || []);
+      buildCountryList();
+      updateChart();
+    });
+
+    clearButton.addEventListener("click", () => {
+      selectedEntities = new Set();
+      buildCountryList();
+      updateChart();
+    });
+
+    window.addEventListener("resize", () => chart.resize());
+    init();
+  </script>
+</body>
+</html>
