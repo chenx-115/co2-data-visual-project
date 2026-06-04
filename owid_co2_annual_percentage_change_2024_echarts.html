@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annual percentage change in CO₂ emissions, 2024</title>
+  <style>
+    :root {
+      --paper: #f8f5ef;
+      --ink: #3c4f69;
+      --muted: #61758f;
+      --line: #d8d2c7;
+      --tab-bg: #ffffff;
+      --tab-active: #eaf2fb;
+      --tab-active-border: #b9cee7;
+      --owid-navy: #0b2b4c;
+      --owid-red: #d74c3c;
+      --nodata: #f4f1eb;
+      --nodata-line: #bfb8ad;
+      --blue-5: #313695;
+      --blue-4: #4575b4;
+      --blue-3: #74add1;
+      --blue-2: #abd9e9;
+      --blue-1: #d8edf3;
+      --warm-1: #fee08b;
+      --warm-2: #fdae61;
+      --warm-3: #f46d43;
+      --warm-4: #d73027;
+      --warm-5: #a50026;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .page {
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 10px 18px 28px;
+    }
+
+    .header {
+      position: relative;
+      padding-right: 120px;
+    }
+
+    .owid-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 98px;
+      background: var(--owid-navy);
+      color: #fff;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.05;
+      padding: 10px 10px 12px;
+      border-bottom: 4px solid var(--owid-red);
+      box-shadow: 0 4px 16px rgba(11, 43, 76, 0.14);
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(36px, 4vw, 58px);
+      line-height: 1.08;
+      font-weight: 700;
+      color: #2f4868;
+    }
+
+    .cn-title {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 3vw, 40px);
+      line-height: 1.2;
+      color: #304e73;
+      font-weight: 700;
+    }
+
+    .desc {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: clamp(18px, 1.6vw, 26px);
+      line-height: 1.45;
+      color: #566d87;
+    }
+
+    .desc + .desc {
+      margin-top: 6px;
+    }
+
+    .toolbar {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 34px 0 0;
+      border: 1px solid #e4ddd2;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--tab-bg);
+      box-shadow: 0 1px 2px rgba(60, 79, 105, 0.06);
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-right: 1px solid #e4ddd2;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 18px;
+      color: #576f8c;
+      background: var(--tab-bg);
+      user-select: none;
+    }
+
+    .tab:last-child {
+      border-right: none;
+    }
+
+    .tab.active {
+      background: var(--tab-active);
+      color: #476b92;
+      box-shadow: inset 0 0 0 1px var(--tab-active-border);
+    }
+
+    .tab-icon {
+      width: 18px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .view-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 34px;
+    }
+
+    .view-button,
+    .region-select {
+      height: 46px;
+      border: 1px solid #d8d2c7;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #4f6481;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 17px;
+      box-shadow: 0 1px 2px rgba(60, 79, 105, 0.06);
+    }
+
+    .view-button {
+      padding: 0 18px;
+      cursor: pointer;
+    }
+
+    .view-button:hover,
+    .region-select:hover {
+      border-color: #c1cedd;
+    }
+
+    .region-select {
+      min-width: 200px;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    .chart-shell {
+      position: relative;
+      border-radius: 8px;
+    }
+
+    #chart {
+      width: 100%;
+      height: 720px;
+    }
+
+    .status {
+      min-height: 22px;
+      margin: 8px 0 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 14px;
+      color: #87694f;
+    }
+
+    .legend-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 24px;
+      margin: 2px auto 14px;
+      justify-content: center;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #596f8b;
+    }
+
+    .legend-nodata {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+    }
+
+    .legend-nodata-box {
+      width: 64px;
+      height: 18px;
+      border: 1px solid #c7bfb2;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          #f5f2eb,
+          #f5f2eb 6px,
+          #dcd5ca 6px,
+          #dcd5ca 8px
+        );
+    }
+
+    .legend-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .legend-labels {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      width: min(840px, calc(100vw - 180px));
+      font-size: 16px;
+    }
+
+    .legend-labels span {
+      text-align: left;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    .legend-labels span:first-child {
+      transform: none;
+      text-align: left;
+    }
+
+    .legend-bar {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      width: min(840px, calc(100vw - 180px));
+      height: 18px;
+      overflow: hidden;
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(60, 79, 105, 0.12);
+    }
+
+    .legend-bar span {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend-bar span:first-child {
+      clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+    }
+
+    .legend-bar span:last-child {
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+    }
+
+    .meta {
+      margin-top: 10px;
+      color: #70839a;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: auto auto minmax(220px, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      max-width: 1180px;
+      margin: 6px auto 0;
+      padding: 6px 0 2px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #5d718b;
+    }
+
+    .timeline button {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 8px;
+      background: #ece9e2;
+      color: #4e627f;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .timeline button:hover {
+      background: #e1ddd4;
+    }
+
+    .timeline .start-year,
+    .timeline .current-year {
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .timeline .current-year {
+      min-width: 46px;
+      text-align: right;
+      color: #445f83;
+      font-weight: 700;
+    }
+
+    .timeline input[type="range"] {
+      width: 100%;
+      accent-color: #a5a9b0;
+      cursor: pointer;
+    }
+
+    code {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #f2f4f7;
+      color: #4a607d;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        padding-inline: 12px;
+      }
+
+      .header {
+        padding-right: 0;
+      }
+
+      .owid-badge {
+        position: static;
+        display: inline-block;
+        margin-bottom: 14px;
+      }
+
+      .tab {
+        padding-inline: 16px;
+        font-size: 16px;
+      }
+
+      .top-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .view-controls {
+        margin-top: 0;
+      }
+
+      #chart {
+        height: 560px;
+      }
+
+      .legend-wrap {
+        gap: 12px;
+      }
+
+      .timeline {
+        grid-template-columns: auto 1fr auto;
+      }
+
+      .timeline .start-year {
+        display: none;
+      }
+    }
+    .owid-badge,
+    .desc,
+    .subtitle,
+    .cn-title,
+    .source,
+    .footer,
+    .notes,
+    .top-controls,
+    .status {
+      display: none !important;
+    }
+
+    body.preview-mode {
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    body.preview-mode .page,
+    body.preview-mode main,
+    body.preview-mode .container,
+    body.preview-mode .wrap {
+      width: 100%;
+      max-width: none;
+      height: 100vh;
+      margin: 0;
+      padding: 6px;
+      border: 0;
+      overflow: hidden;
+    }
+
+    body.preview-mode header,
+    body.preview-mode .header,
+    body.preview-mode h1,
+    body.preview-mode .cn-title,
+    body.preview-mode .subtitle,
+    body.preview-mode .desc,
+    body.preview-mode .top-controls,
+    body.preview-mode .toolbar,
+    body.preview-mode .source,
+    body.preview-mode .footer,
+    body.preview-mode .status,
+    body.preview-mode .notes,
+    body.preview-mode .timeline {
+      display: none !important;
+    }
+
+    body.preview-mode #chart {
+      height: 680px !important;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+      document.body.classList.add("preview-mode");
+    }
+  </script>
+  <div class="page">
+    <header class="header">
+      <div class="owid-badge">Our World<br />in Data</div>
+      <h1>Annual percentage change in CO₂ emissions, <span id="titleYearEn">2024</span></h1>
+      <div class="cn-title"><span id="titleYearCn">2024</span> 年二氧化碳排放量的年度百分比变化率</div>
+      <p class="desc">Carbon dioxide (CO₂) emissions from fossil fuels and industry. Land-use change emissions are not included.</p>
+      <p class="desc">来自化石燃料和工业活动的二氧化碳排放量。其中未包含因土地用途变化而产生的排放量。</p>
+    </header>
+
+    <div class="top-controls">
+      <div class="toolbar" aria-hidden="true">
+        <div class="tab"><span class="tab-icon">⊞</span>Table 表格/列表</div>
+        <div class="tab active"><span class="tab-icon">🌐</span>Map 地图</div>
+        <div class="tab"><span class="tab-icon">📈</span>Line 线段/线条</div>
+        <div class="tab"><span class="tab-icon">▥</span>Bar 酒吧/酒馆</div>
+      </div>
+      <div class="view-controls">
+        <button id="resetViewButton" class="view-button" type="button">↻ Reset view</button>
+        <select id="regionSelect" class="region-select" aria-label="Select region">
+          <option value="World">World</option>
+          <option value="Africa">Africa</option>
+          <option value="North America">North America</option>
+          <option value="South America">South America</option>
+          <option value="Asia">Asia</option>
+          <option value="Europe">Europe</option>
+          <option value="Oceania">Oceania</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-shell">
+      <div id="chart"></div>
+    </div>
+
+    <div class="legend-wrap" aria-hidden="true">
+      <div class="legend-nodata">
+        <div>No data</div>
+        <div class="legend-nodata-box"></div>
+      </div>
+      <div class="legend-scale">
+        <div class="legend-labels">
+          <span>-10%</span>
+          <span>-5%</span>
+          <span>-2%</span>
+          <span>-1%</span>
+          <span>0%</span>
+          <span>1%</span>
+          <span>2%</span>
+          <span>5%</span>
+          <span>10%</span>
+          <span></span>
+        </div>
+        <div class="legend-bar">
+          <span style="background: var(--blue-5);"></span>
+          <span style="background: var(--blue-4);"></span>
+          <span style="background: var(--blue-3);"></span>
+          <span style="background: var(--blue-2);"></span>
+          <span style="background: var(--blue-1);"></span>
+          <span style="background: var(--warm-1);"></span>
+          <span style="background: var(--warm-2);"></span>
+          <span style="background: var(--warm-3);"></span>
+          <span style="background: var(--warm-4);"></span>
+          <span style="background: var(--warm-5);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="timeline">
+      <button id="playButton" type="button" aria-label="Play timeline">▶</button>
+      <span class="start-year">1751</span>
+      <input id="yearSlider" type="range" min="1751" max="2024" step="1" value="2024" />
+      <span id="currentYear" class="current-year">2024</span>
+    </div>
+
+
+  </div>
+
+  <script src="./echarts.min.js"></script>
+  <script src="./owid_co2_timeline_assets.js"></script>
+  <script>
+    const statusEl = document.getElementById("status");
+    const chartEl = document.getElementById("chart");
+    const yearSlider = document.getElementById("yearSlider");
+    const currentYearEl = document.getElementById("currentYear");
+    const titleYearEnEl = document.getElementById("titleYearEn");
+    const titleYearCnEl = document.getElementById("titleYearCn");
+    const playButton = document.getElementById("playButton");
+    const resetViewButton = document.getElementById("resetViewButton");
+    const regionSelect = document.getElementById("regionSelect");
+    const chart = echarts.init(chartEl, null, { renderer: "canvas" });
+
+    const pieces = [
+      { lte: -10, color: "#313695" },
+      { gt: -10, lte: -5, color: "#4575b4" },
+      { gt: -5, lte: -2, color: "#74add1" },
+      { gt: -2, lte: -1, color: "#abd9e9" },
+      { gt: -1, lte: 0, color: "#d8edf3" },
+      { gt: 0, lte: 1, color: "#fee08b" },
+      { gt: 1, lte: 2, color: "#fdae61" },
+      { gt: 2, lte: 5, color: "#f46d43" },
+      { gt: 5, lte: 10, color: "#d73027" },
+      { gt: 10, color: "#a50026" }
+    ];
+
+    function buildOption() {
+      return {
+        animation: false,
+        tooltip: {
+          trigger: "item",
+          backgroundColor: "rgba(255,255,255,0.96)",
+          borderColor: "#d9d3c8",
+          borderWidth: 1,
+          textStyle: {
+            color: "#364b66",
+            fontFamily: '"Trebuchet MS", "Segoe UI", sans-serif',
+            fontSize: 13
+          },
+          formatter(params) {
+            if (params.value == null || Number.isNaN(params.value)) {
+              return `<strong>${params.name}</strong><br/>No data`;
+            }
+            const raw = params.data || {};
+            const sign = params.value > 0 ? "+" : "";
+            return [
+              `<strong>${raw.country || params.name}</strong>`,
+              raw.iso_code ? `ISO3: ${raw.iso_code}` : "",
+              `Annual percentage change, ${currentYear}: <strong>${sign}${params.value.toFixed(2)}%</strong>`
+            ].filter(Boolean).join("<br/>");
+          }
+        },
+        visualMap: {
+          show: false,
+          type: "piecewise",
+          pieces
+        },
+        series: [
+          {
+            name: "Annual percentage change in CO2 emissions, 2024",
+            type: "map",
+            map: "world",
+            roam: false,
+            zoom: 1.08,
+            left: 18,
+            right: 18,
+            top: 8,
+            bottom: 26,
+            emphasis: {
+              label: { show: false },
+              itemStyle: {
+                borderColor: "#516b8b",
+                borderWidth: 1
+              }
+            },
+            itemStyle: {
+              areaColor: "#f4f1eb",
+              borderColor: "#6b7f95",
+              borderWidth: 0.7
+            },
+            data: []
+          }
+        ]
+      };
+    }
+
+    const yearData = new Map(
+      Object.entries(window.OWID_CO2_TIMELINE_DATA || {}).map(([year, items]) => [Number(year), items])
+    );
+    const regionPresets = {
+      "World": { center: [15, 15], zoom: 1.08 },
+      "Africa": { center: [20, 4], zoom: 2.2 },
+      "North America": { center: [-100, 42], zoom: 2.15 },
+      "South America": { center: [-60, -18], zoom: 2.25 },
+      "Asia": { center: [92, 30], zoom: 2.05 },
+      "Europe": { center: [16, 54], zoom: 3.15 },
+      "Oceania": { center: [144, -22], zoom: 2.45 }
+    };
+    let currentYear = 2024;
+    let currentRegion = "World";
+    let playTimer = null;
+
+    function updateYearLabel(year) {
+      currentYear = year;
+      currentYearEl.textContent = String(year);
+      titleYearEnEl.textContent = String(year);
+      titleYearCnEl.textContent = String(year);
+      yearSlider.value = String(year);
+    }
+
+    function updateMap(year) {
+      updateYearLabel(year);
+      const regionPreset = regionPresets[currentRegion] || regionPresets.World;
+      chart.setOption({
+        series: [
+          {
+            name: `Annual percentage change in CO2 emissions, ${year}`,
+            center: regionPreset.center,
+            zoom: regionPreset.zoom,
+            data: yearData.get(year) || []
+          }
+        ]
+      });
+    }
+
+    function applyRegion(regionName) {
+      currentRegion = regionPresets[regionName] ? regionName : "World";
+      regionSelect.value = currentRegion;
+      updateMap(currentYear);
+    }
+
+    function stopPlayback() {
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+      playButton.textContent = "▶";
+    }
+
+    function startPlayback() {
+      stopPlayback();
+      playButton.textContent = "❚❚";
+      playTimer = setInterval(() => {
+        const nextYear = currentYear >= 2024 ? 1751 : currentYear + 1;
+        updateMap(nextYear);
+        if (nextYear === 2024) {
+          stopPlayback();
+        }
+      }, 180);
+    }
+
+    async function init() {
+      try {
+        statusEl.textContent = "正在加载本地地图与时间轴数据...";
+        if (!window.echarts) {
+          throw new Error("Local echarts.min.js was not loaded.");
+        }
+        if (!window.OWID_WORLD_GEOJSON || !window.OWID_CO2_TIMELINE_DATA) {
+          throw new Error("Local asset bundle was not loaded.");
+        }
+        echarts.registerMap("world", window.OWID_WORLD_GEOJSON);
+        chart.setOption(buildOption());
+        updateMap(2024);
+        statusEl.textContent = `已加载 1751–2024 年时间轴；2024 年包含 ${(yearData.get(2024) || []).length} 个国家/地区实体。`;
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "地图或本地资源加载失败。请确认本页与 echarts.min.js、owid_co2_timeline_assets.js 在同一目录。";
+      }
+    }
+
+    yearSlider.addEventListener("input", (event) => {
+      stopPlayback();
+      updateMap(Number(event.target.value));
+    });
+
+    playButton.addEventListener("click", () => {
+      if (playTimer) {
+        stopPlayback();
+      } else {
+        startPlayback();
+      }
+    });
+
+    regionSelect.addEventListener("change", (event) => {
+      applyRegion(event.target.value);
+    });
+
+    resetViewButton.addEventListener("click", () => {
+      applyRegion("World");
+    });
+
+    window.addEventListener("resize", () => chart.resize());
+    init();
+  </script>
+</body>
+</html>

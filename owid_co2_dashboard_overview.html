@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWID CO2 七图整合大屏</title>
+  <style>
+    :root {
+      --bg: #fff6e7;
+      --panel: rgba(255, 250, 239, 0.9);
+      --panel-strong: rgba(255, 247, 230, 0.98);
+      --orange: #ff6a00;
+      --orange-deep: #e84a00;
+      --amber: #ffd166;
+      --line: rgba(255, 106, 0, 0.62);
+      --text: #352414;
+      --muted: #876f59;
+      --shadow: 0 18px 56px rgba(163, 92, 21, 0.18);
+      --side-card-height: calc((100vh - 140px) / 3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      color: var(--text);
+      font-family: "Trebuchet MS", "Microsoft YaHei", "PingFang SC", sans-serif;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255, 194, 84, 0.34), transparent 31%),
+        radial-gradient(circle at 10% 88%, rgba(255, 108, 18, 0.16), transparent 24%),
+        radial-gradient(circle at 92% 18%, rgba(255, 202, 104, 0.18), transparent 26%),
+        linear-gradient(120deg, #fff9ec 0%, #fff1d8 47%, #fff8eb 100%);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 135, 20, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 135, 20, 0.08) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at 50% 48%, black, transparent 78%);
+    }
+
+    .dashboard {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      padding: 10px 16px 16px;
+    }
+
+    .top-line {
+      position: relative;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 10px;
+    }
+
+    .top-line::before,
+    .top-line::after {
+      content: "";
+      position: absolute;
+      top: 31px;
+      width: calc(50% - 280px);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--orange));
+    }
+
+    .top-line::before {
+      left: 0;
+    }
+
+    .top-line::after {
+      right: 0;
+      transform: scaleX(-1);
+    }
+
+    .title-wrap {
+      min-width: 520px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--orange);
+      color: var(--orange-deep);
+      text-align: center;
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 900;
+      letter-spacing: 8px;
+      text-shadow: 0 0 18px rgba(255, 130, 30, 0.2);
+    }
+
+    .title-wrap span {
+      display: block;
+      margin-top: 2px;
+      color: #f28b20;
+      font-size: 10px;
+      letter-spacing: 12px;
+      font-weight: 700;
+    }
+
+    .layout {
+      height: calc(100vh - 84px);
+      display: grid;
+      grid-template-columns: minmax(300px, 26vw) 1fr minmax(300px, 26vw);
+      gap: 16px;
+    }
+
+    .side {
+      display: grid;
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .chart-card {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .chart-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 90, 0, 0.95);
+      box-shadow: 0 24px 80px rgba(181, 91, 20, 0.26);
+    }
+
+    .chart-card::before,
+    .chart-card::after {
+      content: "";
+      position: absolute;
+      z-index: 4;
+      width: 16px;
+      height: 16px;
+      border-color: var(--orange);
+      border-style: solid;
+      opacity: 0.95;
+      pointer-events: none;
+    }
+
+    .chart-card::before {
+      top: -1px;
+      left: -1px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .chart-card::after {
+      right: -1px;
+      bottom: -1px;
+      border-width: 0 2px 2px 0;
+    }
+
+    .center-card {
+      padding: 14px;
+    }
+
+    .card-head {
+      display: none;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .center-card .card-title {
+      font-size: 20px;
+    }
+
+    .card-title::before {
+      content: "";
+      flex: 0 0 auto;
+      width: 3px;
+      height: 21px;
+      background: linear-gradient(180deg, var(--orange), var(--amber));
+      box-shadow: 0 0 12px rgba(255, 126, 24, 0.45);
+    }
+
+    .card-kicker {
+      flex: 0 0 auto;
+      color: rgba(84, 58, 34, 0.44);
+      font-size: 10px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .preview-shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 150, 40, 0.14);
+    }
+
+    .preview-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+      pointer-events: none;
+    }
+
+    .side .preview-frame {
+      width: 132%;
+      height: 132%;
+      transform: scale(0.758);
+      transform-origin: 0 0;
+    }
+
+    .center-card .preview-shell {
+      height: 100%;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .center-card .preview-frame {
+      width: 1180px;
+      height: 760px;
+      flex: 0 0 auto;
+      transform: scale(var(--map-scale, 0.72));
+      transform-origin: center center;
+    }
+
+    .click-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 10px;
+      background: linear-gradient(180deg, transparent 62%, rgba(255, 246, 231, 0.74));
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .chart-card:hover .click-layer {
+      opacity: 1;
+    }
+
+    .click-layer span {
+      padding: 7px 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+      box-shadow: 0 10px 22px rgba(255, 94, 0, 0.25);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      padding: 26px;
+      background: rgba(30, 18, 8, 0.66);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal.is-open {
+      display: grid;
+    }
+
+    .modal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px 12px 18px;
+      border: 1px solid rgba(255, 146, 42, 0.52);
+      border-radius: 14px;
+      background: var(--panel-strong);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+    }
+
+    .modal-title {
+      min-width: 0;
+      color: var(--orange-deep);
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 10px;
+    }
+
+    .modal-actions button,
+    .modal-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid rgba(255, 122, 21, 0.5);
+      border-radius: 10px;
+      color: var(--orange-deep);
+      background: #fff7e9;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .modal-frame {
+      width: 100%;
+      height: min(74vh, 820px);
+      border: 0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .modal-content {
+      min-height: 0;
+      overflow: auto;
+      border-radius: 16px;
+    }
+
+    .chart-explanation {
+      margin-top: 14px;
+      padding: 20px 24px 22px;
+      border: 1px solid rgba(255, 146, 42, 0.42);
+      border-radius: 16px;
+      background: rgba(255, 250, 239, 0.97);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.14);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Trebuchet MS", sans-serif;
+      line-height: 1.78;
+    }
+
+    .chart-explanation h2 {
+      margin: 0 0 10px;
+      color: var(--orange-deep);
+      font-size: 22px;
+      letter-spacing: 0.04em;
+    }
+
+    .chart-explanation h3 {
+      margin: 16px 0 4px;
+      color: #4f351d;
+      font-size: 17px;
+    }
+
+    .chart-explanation p {
+      margin: 0;
+      color: #5f4b38;
+      font-size: 15px;
+    }
+
+    @media (max-width: 1180px) {
+      html,
+      body {
+        overflow: auto;
+      }
+
+      .dashboard {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .layout {
+        height: auto;
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-rows: none;
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card {
+        height: 360px;
+      }
+
+      .center-card {
+        height: 620px;
+        order: -1;
+      }
+
+      .title-wrap {
+        min-width: 0;
+        width: 84%;
+        letter-spacing: 5px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .dashboard {
+        padding: 10px;
+      }
+
+      .top-line {
+        height: auto;
+        margin-bottom: 12px;
+      }
+
+      .top-line::before,
+      .top-line::after {
+        display: none;
+      }
+
+      .title-wrap {
+        width: 100%;
+        font-size: 21px;
+        letter-spacing: 3px;
+      }
+
+      .title-wrap span {
+        letter-spacing: 5px;
+      }
+
+      .chart-card {
+        height: 320px;
+        padding: 10px;
+      }
+
+      .center-card {
+        height: 520px;
+      }
+
+      .card-kicker {
+        display: none;
+      }
+
+      .modal {
+        padding: 10px;
+      }
+
+      .modal-bar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="dashboard">
+    <header class="top-line">
+      <div class="title-wrap">
+        全球碳排放与经济发展的交互式可视化
+        <span>SEVEN CHARTS DASHBOARD</span>
+      </div>
+    </header>
+
+    <section class="layout" aria-label="七个 HTML 图表整合布局">
+      <div class="side side-left">
+        <article class="chart-card" tabindex="0" data-chart="bar">
+          <div class="card-head">
+            <div class="card-title">年度 CO2 排放总量排名</div>
+            <div class="card-kicker">ANNUAL TOTAL</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_co2_annual_emissions_bar.html?preview=1" title="年度 CO2 排放总量排名预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+
+        <article class="chart-card" tabindex="0" data-chart="region">
+          <div class="card-head">
+            <div class="card-title">世界区域年度排放变化</div>
+            <div class="card-kicker">REGION TREND</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_co2_annual_by_world_region_area.html?preview=1" title="世界区域年度排放变化预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+
+        <article class="chart-card" tabindex="0" data-chart="capita">
+          <div class="card-head">
+            <div class="card-title">人均 CO2 排放</div>
+            <div class="card-kicker">PER CAPITA</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_co2_per_capita_line.html?preview=1" title="人均 CO2 排放预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+      </div>
+
+      <article class="chart-card center-card" tabindex="0" data-chart="change">
+        <div class="card-head">
+          <div class="card-title">中心地图：年度 CO2 排放百分比变化</div>
+          <div class="card-kicker">MAP IN CENTER</div>
+        </div>
+        <div class="preview-shell">
+          <iframe class="preview-frame" src="owid_co2_annual_percentage_change_2024_echarts.html?preview=1" title="年度 CO2 排放百分比变化地图预览"></iframe>
+        </div>
+        <div class="click-layer"><span>点击查看完整地图</span></div>
+      </article>
+
+      <div class="side side-right">
+        <article class="chart-card" tabindex="0" data-chart="treemap">
+          <div class="card-head">
+            <div class="card-title">全球排放结构 Treemap</div>
+            <div class="card-kicker">WHO EMITS MOST</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_co2_treemap_who_emits_most.html?preview=1" title="全球排放结构 Treemap 预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+
+        <article class="chart-card" tabindex="0" data-chart="energy">
+          <div class="card-head">
+            <div class="card-title">收入与消费端人均排放</div>
+            <div class="card-kicker">ENERGY PROBLEM</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_energy_problem_scatter.html?preview=1" title="收入与消费端人均排放预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+
+        <article class="chart-card" tabindex="0" data-chart="share">
+          <div class="card-head">
+            <div class="card-title">排放份额 vs 人口份额</div>
+            <div class="card-kicker">SHARE FAIRNESS</div>
+          </div>
+          <div class="preview-shell">
+            <iframe class="preview-frame" src="owid_share_co2_vs_population_interactive.html?preview=1" title="排放份额与人口份额预览"></iframe>
+          </div>
+          <div class="click-layer"><span>点击查看完整图表</span></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <section class="modal" id="chartModal" aria-hidden="true" aria-label="完整图表弹窗">
+    <div class="modal-bar">
+      <div class="modal-title" id="modalTitle">完整图表</div>
+      <div class="modal-actions">
+        <a id="openStandalone" href="#" target="_blank" rel="noopener">新窗口打开</a>
+        <button type="button" id="closeModal">关闭</button>
+      </div>
+    </div>
+    <div class="modal-content">
+      <iframe class="modal-frame" id="chartFrame" title="完整 OWID 图表"></iframe>
+      <article class="chart-explanation" id="chartExplanation">
+        <h2 id="explanationTitle">图表解释</h2>
+        <h3>图表功能：</h3>
+        <p id="explanationFunction"></p>
+        <h3>主要发现：</h3>
+        <p id="explanationFinding"></p>
+      </article>
+    </div>
+  </section>
+
+  <script>
+    const charts = {
+      bar: {
+        title: "年度 CO2 排放总量排名",
+        file: "owid_co2_annual_emissions_bar.html",
+        functionText: "该图展示主要国家和地区在从 1750 到 2024 年的年度 CO2 排放总量排名。它采用柱状图形式，强调不同国家在当前年份的绝对排放规模。",
+        findingText: "当前全球年度 CO2 排放高度集中在少数大型经济体和人口大国。这说明全球减排成效在很大程度上取决于主要排放国的能源转型和气候政策。但该图不能直接回答“排放是否公平”，因为它没有考虑人口规模、人均排放和历史累计排放差异。"
+      },
+      region: {
+        title: "世界区域年度 CO2 排放变化",
+        file: "owid_co2_annual_by_world_region_area.html",
+        functionText: "该图展示不同世界区域从 1750 年以来的年度 CO2 排放变化。通过堆叠面积图，可以观察全球排放总量增长的同时，不同区域贡献如何发生变化。",
+        findingText: "全球 CO2 排放的地理中心已经发生明显转移。工业化早期，欧洲和美国长期占据主导地位；进入 20 世纪后半叶，亚洲尤其是中国和印度的排放快速增长。该图说明，全球排放问题既有当前格局，也有清晰的历史阶段变化。"
+      },
+      capita: {
+        title: "CO2 emissions per capita",
+        file: "owid_co2_per_capita_line.html",
+        functionText: "该图展示不同国家和地区的人均 CO2 排放变化。人均排放是将国家总排放除以人口后得到的指标，用来衡量平均到每个人身上的排放水平。",
+        findingText: "从人均视角看，全球排放责任排序会发生明显变化。一些高收入国家、主要产油国以及美国、加拿大、澳大利亚等国家的人均排放较高；许多低收入国家，尤其是撒哈拉以南非洲国家，人均排放极低。该图说明，讨论气候责任不能只看国家总排放，还必须考虑人口规模和发展水平。"
+      },
+      change: {
+        title: "年度 CO2 排放百分比变化地图",
+        file: "owid_co2_annual_percentage_change_2024_echarts.html",
+        functionText: "该图展示各国年度 CO2 排放相对于上一年的百分比变化。正值表示排放上升，负值表示排放下降。",
+        findingText: "年度变化率不能说明谁排放最多，但可以揭示各国排放趋势的短期变化。一个低排放国家可能因为基数较小而出现较高增长率，一个高排放国家也可能因为增幅较小而在变化率图中并不突出。因此，该图应与总排放图、人均排放图和累计排放图结合使用，避免把“增长快”误解为“排放最多”。"
+      },
+      treemap: {
+        title: "Who emits the most CO2? 全球排放结构 Treemap",
+        file: "owid_co2_treemap_who_emits_most.html",
+        functionText: "该图使用矩形树图展示全球 CO2 排放结构。每个矩形代表一个国家、地区或国际航空与航运，矩形面积表示其在全球年度 CO2 排放中的占比。",
+        findingText: "全球 CO2 排放结构非常不均衡。亚洲是当前最大的排放区域，中国是全球最大的单一年度排放国；北美和欧洲虽然占比下降，但仍然贡献较大；非洲和南美洲的年度排放占比较小。该图说明，全球排放并不是平均分布的，而是集中在少数国家和区域。"
+      },
+      energy: {
+        title: "Consumption-based CO2 emissions per capita vs. GDP per capita",
+        file: "owid_energy_problem_scatter.html",
+        functionText: "该图展示消费端人均 CO2 排放与人均 GDP 之间的关系。横轴表示人均 GDP，纵轴表示消费端人均 CO2 排放，气泡大小表示人口规模。",
+        findingText: "收入水平与人均排放之间通常存在较强关联，高收入国家往往具有更高的人均消费端排放。但全球能源问题不能简单理解为“低排放但贫困”与“富裕但高排放”之间的二选一。真正的挑战是发展低碳、廉价、安全且可大规模部署的能源系统，使低收入国家能够改善生活水平，同时避免复制高收入国家的高碳发展路径。"
+      },
+      share: {
+        title: "Share of global CO2 emissions vs. share of population",
+        file: "owid_share_co2_vs_population_interactive.html",
+        functionText: "该图展示各国家或地区的全球 CO2 排放份额与全球人口份额之间的关系。横轴表示人口占全球总人口的比例，纵轴表示 CO2 排放占全球总排放的比例。",
+        findingText: "全球 CO2 排放份额与人口份额并不完全匹配。部分高收入国家或高能源消费国家的排放份额明显高于其人口份额，而一些人口大国或低收入国家的人口份额高于排放份额。该图进一步说明，气候公平不能只看“谁的总排放最大”，还应关注排放规模是否与人口规模相称。"
+      }
+    };
+
+    const modal = document.getElementById("chartModal");
+    const frame = document.getElementById("chartFrame");
+    const title = document.getElementById("modalTitle");
+    const explanationTitle = document.getElementById("explanationTitle");
+    const explanationFunction = document.getElementById("explanationFunction");
+    const explanationFinding = document.getElementById("explanationFinding");
+    const closeBtn = document.getElementById("closeModal");
+    const openStandalone = document.getElementById("openStandalone");
+
+    function openChart(key) {
+      const chart = charts[key];
+      if (!chart) return;
+      title.textContent = chart.title;
+      explanationTitle.textContent = chart.title;
+      explanationFunction.textContent = chart.functionText;
+      explanationFinding.textContent = chart.findingText;
+      frame.src = chart.file;
+      openStandalone.href = chart.file;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeChart() {
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      frame.src = "about:blank";
+      document.body.style.overflow = "";
+    }
+
+    document.querySelectorAll("[data-chart]").forEach((item) => {
+      item.addEventListener("click", () => openChart(item.dataset.chart));
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openChart(item.dataset.chart);
+        }
+      });
+    });
+
+    closeBtn.addEventListener("click", closeChart);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeChart();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && modal.classList.contains("is-open")) {
+        closeChart();
+      }
+    });
+
+    function fitCenterMapPreview() {
+      const shell = document.querySelector(".center-card .preview-shell");
+      const centerFrame = document.querySelector(".center-card .preview-frame");
+      if (!shell || !centerFrame) return;
+      const scale = Math.min(shell.clientWidth / 1180, shell.clientHeight / 760, 1);
+      centerFrame.style.setProperty("--map-scale", String(Math.max(scale, 0.1)));
+    }
+
+    window.addEventListener("resize", fitCenterMapPreview);
+    window.addEventListener("load", fitCenterMapPreview);
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(fitCenterMapPreview).observe(document.querySelector(".center-card .preview-shell"));
+    }
+  </script>
+</body>
+</html>
